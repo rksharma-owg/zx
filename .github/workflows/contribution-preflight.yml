@@ -1,0 +1,60 @@
+name: ZX documentation preflight
+on:
+  push:
+    branches: [codex/preflight-zx-json-docs]
+permissions:
+  contents: read
+jobs:
+  validation:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: patch
+            sha: e39da1cf31566246dc52463fa44b2bdcdb690521
+          - kind: baseline
+            sha: 65fc542d88baac578967e22bea28cb610976578c
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      npm_config_audit: false
+      npm_config_fund: false
+      npm_config_save: false
+      npm_config_package_lock: false
+      TESTED_SHA: ${{ matrix.sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.sha }}
+          fetch-depth: 0
+      - name: Verify exact SHA
+        run: test "$(git rev-parse HEAD)" = "$TESTED_SHA"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: node --version
+      - run: npm ci
+      - name: Check docs and repository validation
+        shell: bash
+        run: |
+          set +e
+          failed=0
+          index=0
+          mkdir -p /tmp/validation-logs
+          for command in 'npm run build' 'npm run fmt:check' 'npm run test:size' 'npm run test:license' 'env -u NO_COLOR FORCE_COLOR=3 npm run test:coverage' 'npm run test:types' 'npm run test:audit' 'npm run test:circular' 'npm run docs:build'; do
+            index=$((index + 1))
+            echo "::group::$command"
+            bash -c "$command" 2>&1 | tee "/tmp/validation-logs/$index.log"
+            result=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            echo "$command: exit $result" >> /tmp/validation-logs/results.txt
+            if [ "$result" -ne 0 ]; then failed=1; fi
+          done
+          cat /tmp/validation-logs/results.txt
+          exit "$failed"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: validation-${{ matrix.kind }}
+          path: /tmp/validation-logs
