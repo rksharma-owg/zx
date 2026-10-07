@@ -83,6 +83,16 @@ await $`echo '{"foo": "bar"}'`
   .json()             // {foo: 'bar'}
 ```
 
+These methods read the combined stdout and stderr output (`stdall`). If a
+command writes JSON to stdout and progress messages to stderr, `.json()` can
+throw even when stdout contains valid JSON. Parse stdout explicitly in that
+case:
+
+```js
+const output = await $`command --json`
+const data = JSON.parse(output.stdout)
+```
+
 ## `pid, cwd, cmd, fullCmd`
 
 Process metadata getters.

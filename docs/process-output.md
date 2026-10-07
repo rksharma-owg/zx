@@ -23,6 +23,7 @@ interface ProcessOutput extends Error {
 
   buffer(): Buffer
 
+  // Parses combined stdout and stderr as JSON
   json<T = any>(): T
 
   blob(type = 'text/plain'): Blob
@@ -39,3 +40,7 @@ interface ProcessOutput extends Error {
   valueOf(): string
 }
 ```
+
+For commands that write JSON to stdout and diagnostics to stderr, use
+`JSON.parse(o.stdout)` instead of `o.json()`. See the
+[output formatters](./process-promise#json-text-lines-buffer-blob) for an example.
