@@ -11,7 +11,7 @@ jobs:
       matrix:
         include:
           - kind: patch
-            sha: e39da1cf31566246dc52463fa44b2bdcdb690521
+            sha: e5ba4fbd7b21748aa499d057decee5a661544ff2
           - kind: baseline
             sha: 65fc542d88baac578967e22bea28cb610976578c
     runs-on: ubuntu-latest
